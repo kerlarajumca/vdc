@@ -2,7 +2,7 @@
 $server="localhost";
 $user="root";
 $password="";
-$database="vdc";
+$database="vaagdevi_vdc";
 
 $conn=mysqli_connect($server,$user,$password,$database);
 
