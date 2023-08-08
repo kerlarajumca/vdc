@@ -68,7 +68,7 @@
                         $sql1.="student=1";
                       }
                     
-
+                     $sql1.=" order by page_order asc";
                       $msql=mysqli_query($conn,$sql1);
                       $mcount=mysqli_num_rows($msql);
                       if($mcount!=0)
@@ -112,7 +112,54 @@
                     {
                       $sql2.="student=1";
                     }
+
+                    $sql2.=" order by page_order asc";
                       $msql=mysqli_query($conn,$sql2);
+                      $mcount=mysqli_num_rows($msql);
+                      if($mcount!=0)
+                      {
+                        echo "<ul class='nav nav-treeview'>";
+                        while($r1=mysqli_fetch_array($msql))
+                        {
+                            echo '<li class="nav-item">
+                            <a href="'.$r1['link'].'" class="nav-link">
+                                <i class="far fa-circle nav-icon"></i>
+                                <p>'.$r1['menu_text'].'</p>
+                            </a>
+                            </li>';
+                        }
+                        echo '</ul>';
+                      }
+                      
+                    ?>
+                </li>
+
+
+                <li class="nav-item">
+                    <a href="#" class="nav-link">
+                        <i class="nav-icon fas fa-database"></i>
+                        <p>
+                            Reports
+                            <i class="fas fa-angle-left right"></i>
+                        </p>
+                    </a>
+                    <?PHP
+                    $sql3="select * from pages where menu_type=3 and ";
+                    if($role==1)
+                    {
+                      $sql3.="admin=1";
+                    }
+                    else if($role==2)
+                    {
+                      $sql3.="faculty=1";
+                    }
+                    else if($role==3)
+                    {
+                      $sql3.="student=1";
+                    }
+
+                    $sql3.=" order by page_order asc";
+                      $msql=mysqli_query($conn,$sql3);
                       $mcount=mysqli_num_rows($msql);
                       if($mcount!=0)
                       {

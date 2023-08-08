@@ -2,7 +2,7 @@
 require_once("../../database/dbconnect.php");
 $groupid=$_POST['groupid'];
 
-$sql=mysqli_query($conn,"select * from classes where group_id=$groupid");
+$sql=mysqli_query($conn,"select * from classes where group_id=$groupid order by class_name asc");
 $res=array();
 while($r=mysqli_fetch_array($sql))
 {
