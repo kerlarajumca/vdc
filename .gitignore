@@ -1,7 +1,7 @@
 # System / Log files
 *.DS_Store
 *.log
-
+database/dbconnect.php
 # Archives
 *.zip
 

@@ -2,54 +2,36 @@
 include_once("header.php");
 $courses = mysqli_query($conn, "select * from courses");
 $result = array();
-$subj="";
+$subj = "";
+$datesarr = array();
+$studsarr = array();
 if (isset($_POST['get_data'])) {
     $course = $_POST['course'];
     $group = $_POST['group'];
     $class = $_POST['class'];
     $subject = $_POST['subject'];
-    $clsdate = $_POST['clsdate'];
     $facultyid = $_SESSION['facultyid'];
     $recid = array();
-    $subjqry="select subj_title,subj_code from subjects where id=$subject";
-    $execsubjqry=mysqli_query($conn,$subjqry);
-    $subjrow=mysqli_fetch_array($execsubjqry);
-    $subj=$subjrow['subj_title']."(".$subjrow['subj_code'].")-- $clsdate";
 
-    $sql1 = "select recid from attendance where faculty=$facultyid and classid=$class and subject=$subject and tdate='$clsdate' ";
-
-    if ($res = mysqli_query($conn, $sql1)) {
-        $c = mysqli_num_rows($res);
-        if ($c != 0) {
-            while ($r = mysqli_fetch_array($res)) {
-                array_push($recid, $r['recid']);
-            }
-        }
+    $datesq = mysqli_query($conn, "select * from attendance where classid=$class and subject=$subject");
+    while ($r = mysqli_fetch_array($datesq)) {
+        $tarr = array(
+            "tdate" => $r['tdate'],
+            "recid" => $r['recid'],
+            "hour" => $r['hour']
+        );
+        array_push($datesarr, $tarr);
     }
 
-    if (empty($recid)) {
-        echo "<script type='text/javascript'>alert('No Record Found!');</script>";
-    } else {
 
-        foreach ($recid as $value) {
-            $rid = $value;
-            $tmp = array("recid" => $value, "attendance" => array());
-            $sql2 = "select A.studentid,A.status,S.sname,S.admn_no from attendance_detail A left join students S on S.id=A.studentid where A.recid='$value'";
-            $r = mysqli_query($conn, $sql2);
-            $attandance = array();
-            while ($row = mysqli_fetch_array($r)) {
-                $arr = array(
-                    "sid" => $row['studentid'],
-                    "status" => $row['status'],
-                    "admn_no" => $row['admn_no'],
-                    "sname" => $row['sname']
-                    
-                );
-                array_push($tmp['attendance'], $arr);
-            }
-            //array_push($tmp['attendance'], $attandance);
-            array_push($result, $tmp);
-        }
+    $studsq = mysqli_query($conn, "select * from students where classid=$class");
+    while ($r2 = mysqli_fetch_array($studsq)) {
+        $tarr = array(
+            "sname" => $r2['sname'],
+            "admnno" => $r2['admn_no'],
+            "id" => $r2['id']
+        );
+        array_push($studsarr, $tarr);
     }
 }
 
@@ -147,11 +129,7 @@ if (isset($_POST['get_data'])) {
                                             </select>
                                         </div>
 
-                                        <div class="form-group date-div">
-                                            <label for="exfordate">Select Date</label>
-                                            <input class="custom-select form-control-border dateid" type="date" id="exfordate" name="clsdate" value="<?PHP echo date("Y-m-d"); ?>" required>
 
-                                        </div>
 
                                         <div class="form-group">
                                             <label for="submitfrm">&nbsp;</label>
@@ -172,56 +150,71 @@ if (isset($_POST['get_data'])) {
                 <div class="container-fluid">
                     <div class="card card-primary">
                         <div class="card-header">
-                            <div class="card-title">Students attendance</div>
+                            <div class="card-title">Students attendance Register</div>
                         </div>
                         <div class="card-body">
                             <?PHP
-                            if (isset($_POST['get_data']) && empty($result)) {
-                                echo "No results found";
-                            }
-                            if (isset($_POST['get_data']) && !empty($result)) {
-                                foreach ($result as $r1) {
-                                    
-                                    $recordid = $r1['recid'];
-                                    
-                                    $details = $r1['attendance'];
-                                    $n=1;
-                                    ?>
-                                    <h3><?PHP echo $subj==""?"":$subj; ?></h3>
-                                            <table class="table table-bordered table-havor example2">
-                                                <thead>
-                                                    <tr>
-                                                        <th>SNO</th>
-                                                        <th>Name</th>
-                                                        <th>Admin No</th>
-                                                        <th>Attendance</th>
-
-                                                    </tr>
-                                                </thead>
-                                                <tbody>
-                                                    <?PHP
-                                    foreach ($details as $det) {
-                                        
+                            echo "hi";
+                            exit;
+                            if (empty($datesarr) && empty($studsarr)) {
+                                echo "Attendance not yet started for the subject";
+                            } else {
                             ?>
-                                                <tr style=<?PHP echo $det['status']==1?"color:green":"color:red";?> >
-                                                    <td><?php echo $n; ?>
-                                                    <td><?php echo $det['sname'];?></td>
-                                                    <td><?PHP echo $det['admn_no']; ?></td>
-                                                    <td><?php echo $det['status']==1?"Present":"Absent"; ?></td>
-                                    </tr>
-
-                                                
-                                <?PHP
-                                $n++;
-                                    }
-                                    ?>
-                                    </tbody>
-                                            </table>
-                                            <hr>
+                                <table class="table table-stripped table-havor" id="example2">
+                                    <thead>
+                                        <tr>
+                                            <td>SNO</td>
+                                            <td>Student Name</td>
+                                            <td>Admn No</td>
                                             <?PHP
-                                }
+                                            foreach ($datesarr as $dt) {
+                                                var_dump($dt);
+                                                exit;
+                                                foreach ($dt as $d) {
+                                                    $d2 = $d['tdate'] . "(" . $d['hour'] . ")";
+                                                }
+                                            }
+                                            ?>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?PHP
+                                        $n = 1;
+                                        foreach ($studsarr as $sarr) {
+                                            var_dump($sarr);
+                                            exit;
+                                            foreach ($sarr as $s) {
+                                                echo "<tr>";
+                                                echo "<td>$n</td>";
+                                                echo  "<td>" . $s['sname'] . "</td>";
+                                                echo "<td>" . $s['admnno'] . "</td>";
+                                                $sid = $s['id'];
+                                                foreach ($datesarr as $dt) {
+                                                    foreach ($dt as $d) {
+                                                        $recid = $d['recid'];
+                                                        $statusqry = mysqli_query($conn, "select status from attendance_details where recid='$recid' and studentid=$sid");
+                                                        $count = mysqli_num_rows($statusqry);
+                                                        if ($count >= 0) {
+                                                            $r = mysqli_fetch_array($statusqry);
+                                                            $status = $r['status'];
+                                                            echo "<td>" . $status == 1 ? "P" : "A" . "</td>";
+                                                        } else {
+                                                            echo "<td>NA</td>";
+                                                        }
+                                                    }
+                                                }
+                                                echo "</tr>";
+                                            }
+                                            echo "</tbody>";
+                                            echo "<table>";
+                                            $n++;
+                                        }
+                                        ?>
+                                    </tbody>
+                                </table>
+                            <?PHP
                             }
-                                ?>
+                            ?>
 
 
 
