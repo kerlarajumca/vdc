@@ -3,9 +3,10 @@ include_once("header.php");
 $courses = mysqli_query($conn, "select * from courses");
 $result = array();
 $subj = "";
-$datesarr = array();
-$studsarr = array();
-if (isset($_POST['get_data'])) {
+$datesarr1 = array();
+$studsarr1 = array();
+if (isset($_POST['get_data'])) 
+{
     $course = $_POST['course'];
     $group = $_POST['group'];
     $class = $_POST['class'];
@@ -20,7 +21,7 @@ if (isset($_POST['get_data'])) {
             "recid" => $r['recid'],
             "hour" => $r['hour']
         );
-        array_push($datesarr, $tarr);
+        array_push($datesarr1, $tarr);
     }
 
 
@@ -31,8 +32,9 @@ if (isset($_POST['get_data'])) {
             "admnno" => $r2['admn_no'],
             "id" => $r2['id']
         );
-        array_push($studsarr, $tarr);
+        array_push($studsarr1, $tarr);
     }
+   
 }
 
 
@@ -107,6 +109,7 @@ if (isset($_POST['get_data'])) {
 
                                                     echo "<option value=" . $row['id'] . ">" . $row['course'] . "</option>";
                                                 }
+                                                
                                                 ?>
 
                                             </select>
@@ -153,12 +156,16 @@ if (isset($_POST['get_data'])) {
                             <div class="card-title">Students attendance Register</div>
                         </div>
                         <div class="card-body">
-                            <?PHP
-                            echo "hi";
-                            exit;
-                            if (empty($datesarr) && empty($studsarr)) {
+                            <?php
+                             
+
+                            if(empty($datesarr1)) {
+                                
                                 echo "Attendance not yet started for the subject";
-                            } else {
+                            } 
+                            else 
+                            {
+                                
                             ?>
                                 <table class="table table-stripped table-havor" id="example2">
                                     <thead>
@@ -167,52 +174,64 @@ if (isset($_POST['get_data'])) {
                                             <td>Student Name</td>
                                             <td>Admn No</td>
                                             <?PHP
-                                            foreach ($datesarr as $dt) {
-                                                var_dump($dt);
-                                                exit;
-                                                foreach ($dt as $d) {
-                                                    $d2 = $d['tdate'] . "(" . $d['hour'] . ")";
-                                                }
+                                            foreach ($datesarr1 as $dt) {
+                                                $time_input = strtotime($dt['tdate']);
+                                                $date_input = getDate($time_input);
+
+                                                    $d2 = $date_input['mday'] . "/" . $date_input['mon'] . "(".$dt['hour'].")";
+                                                    echo "<td>$d2</td>";
+                                                
                                             }
                                             ?>
+                                            <td>Percentage</td>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <?PHP
                                         $n = 1;
-                                        foreach ($studsarr as $sarr) {
-                                            var_dump($sarr);
-                                            exit;
-                                            foreach ($sarr as $s) {
-                                                echo "<tr>";
-                                                echo "<td>$n</td>";
-                                                echo  "<td>" . $s['sname'] . "</td>";
-                                                echo "<td>" . $s['admnno'] . "</td>";
-                                                $sid = $s['id'];
-                                                foreach ($datesarr as $dt) {
-                                                    foreach ($dt as $d) {
-                                                        $recid = $d['recid'];
-                                                        $statusqry = mysqli_query($conn, "select status from attendance_details where recid='$recid' and studentid=$sid");
-                                                        $count = mysqli_num_rows($statusqry);
-                                                        if ($count >= 0) {
-                                                            $r = mysqli_fetch_array($statusqry);
-                                                            $status = $r['status'];
-                                                            echo "<td>" . $status == 1 ? "P" : "A" . "</td>";
-                                                        } else {
-                                                            echo "<td>NA</td>";
-                                                        }
+                                        foreach ($studsarr1 as $s) {
+                                            echo "<tr>";
+                                            echo "<td>$n</td>";
+                                            echo  "<td>" . $s['sname'] . "</td>";
+                                            echo "<td>" . $s['admnno'] . "</td>";
+                                            $sid = $s['id'];
+                                            $totaldays=count($datesarr1);
+                                            $pcount=0;
+                                            foreach ($datesarr1 as $d) 
+                                            {
+                                                    $recid = $d['recid'];
+                                                    $q="select status from attendance_detail where recid='$recid' and studentid=$sid";
+                                                   
+                                                    $statusqry = mysqli_query($conn, $q);
+                                                    
+                                                    $count1 = mysqli_num_rows($statusqry);
+                                                    if ($count1 > 0) {
+                                                        $r = mysqli_fetch_array($statusqry);
+                                                        $status = $r['status'];
+                                                        if($status==1)
+                                                          $pcount++;
+                                                        $flag=($status==1?"<font color='blue'>P</font>":"<font color='red'>A</font>");
+                                                        echo "<td>" . $flag. "</td>";
+                                                    } else {
+                                                        echo "<td><font color='red'>A</font></td>";
                                                     }
-                                                }
-                                                echo "</tr>";
+                                                
                                             }
-                                            echo "</tbody>";
-                                            echo "<table>";
+                                            $percentage=($pcount/$totaldays)*100;
+                                            echo "<td>$percentage %</td>";
+                                            echo "</tr>";
+                                        
                                             $n++;
+                                                                 
+                                               
                                         }
+                                       
+                                        
                                         ?>
                                     </tbody>
                                 </table>
                             <?PHP
+                            
                             }
                             ?>
 
@@ -286,16 +305,16 @@ if (isset($_POST['get_data'])) {
 
     <script>
         $(function() {
-            $('.example2').DataTable({
+            $('#example2').DataTable({
                 "paging": true,
                 "lengthChange": false,
                 "searching": true,
                 "ordering": true,
                 "info": true,
                 "autoWidth": false,
-                "responsive": true,
+                "responsive": false,
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('.example2_wrapper .col-md-6:eq(0)');
+            }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
         });
 
 
