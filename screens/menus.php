@@ -78,7 +78,7 @@
                         {
                             echo '<li class="nav-item">
                             <a href="'.$r['link'].'" class="nav-link">
-                                <i class="far fa-circle nav-icon"></i>
+                                <i class="fa fa-angle-right nav-icon"></i>
                                 <p>'.$r['menu_text'].'</p>
                             </a>
                             </li>';

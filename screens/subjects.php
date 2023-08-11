@@ -1,14 +1,20 @@
 <?PHP
 include_once("header.php");
-$depts=mysqli_query($conn,"select * from departments order by dept_code asc");
+$subjects=mysqli_query($conn,"Select C.course,G.group_name,CL.class_name,S.id,S.subj_code,S.subj_title from subjects S left join classes CL on S.classid=CL.id left join groups G on CL.group_id=G.id left JOIN courses C on G.course_id=C.id");
 
 if(isset($_POST['submit']))
 {
-    $dept_code=$_POST['deptcode'];
-    $dept_name=$_POST['deptname'];
-    if(mysqli_query($conn,"Insert into departments(dept_code,dept_name) values('$dept_code','$dept_name')"))
+   
+    $course=$_POST['course'];
+    $group=$_POST['group'];
+    $class1=$_POST['class'];
+    $subjcode=$_POST['subjcode'];
+    $subjtitle=$_POST['subjtitle'];
+    
+    if(mysqli_query($conn,"Insert into subjects(classid,subj_code,subj_title) values($class1,'$subjcode','$subjtitle')"))
     {
-        echo '<script>alert("Record added Successfully")</script>';
+        echo '<script>alert("subject Successfully")</script>';
+        //echo '<script>alert("'.mysqli_error($conn).'")</script>';
         header("Refresh:0");
     }
     else
@@ -71,7 +77,7 @@ include_once("menus.php");
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <p class="m-0">Departments   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <p class="m-0">Subjects &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-lg">
                   Add New
                 </button>
@@ -80,7 +86,7 @@ include_once("menus.php");
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Departments</li>
+              <li class="breadcrumb-item active">Subjects</li>
             </ol>
           </div><!-- /.col -->
         </div><!-- /.row -->
@@ -93,33 +99,43 @@ include_once("menus.php");
       <div class="container-fluid">
         <div class="card card-primary">
             <div class="card-header">
-                <div class="card-title">Departments</div>
+                <div class="card-title">Subjects</div>
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-havor" id="example2">
                    <thead>
                     <tr>
                         <th>SNO</th>
-                        <th>Department Code</th>
-                        <th>Department</th>
+                        <th>Course</th>
+                        <th>Group</th>
+                        <th>Class</th>
+                        <th>Subject Code</th>
+                        <th> Subject</th>
                         
                     </tr>
                    </thead>
                    <tbody>
                     <?PHP 
                       $sno=1;
-                      while($r=mysqli_fetch_array($depts))
+                      while($r=mysqli_fetch_array($subjects))
                       {
-                        $deptcode=$r['dept_code'];
-                        $deptname=$r['dept_name'];
+                        $course=$r['course'];
+                        $group=$r['group_name'];
+                        $class=$r['class_name'];
+                        $subjcode=$r['subj_code'];
+                        $subj=$r['subj_title'];
+                        
                         echo "<tr>
                           <td>$sno
-                            &nbsp; &nbsp; <button class='btn btn-warning btnedit' data-deptid='".$r['id']."' data-toggle='modal' data-target='#modal-lg'>Edit </button>
+                            &nbsp; &nbsp; <button class='btn btn-warning btnedit' data-courseid='".$r['id']."' data-toggle='modal' data-target='#modal-lg'>Edit </button>
                             &nbsp; &nbsp;  <button class='btn btn-danger del' data-recid='".$r['id']."'>Delete </button>
                           </td>
                           
-                          <td>$deptcode</td>
-                          <td>$deptname</td>
+                          <td>$course</td>
+                          <td>$group</td>
+                          <td>$class</td>
+                          <td>$subjcode</td>
+                          <td>$subj</td>
                         </tr>
                         ";
                         $sno++;
@@ -220,7 +236,7 @@ include_once("menus.php");
             url: 'APIS/delete_record.php',
             data: {
               recid: recid,
-              table:'departments',
+              table:'subjects',
               colname:'id'
             },
             success: function(htmlresponse) {
@@ -237,37 +253,146 @@ include_once("menus.php");
      
       });
 
+
+      $(".course").on('change', function() {
+        var course = $(this).val();
+
+        if (course) {
+          $.ajax({
+            type: 'POST',
+            url: 'APIS/get_groups.php',
+            data: {
+              course: '' + course + ''
+            },
+            success: function(htmlresponse) {
+              var json = $.parseJSON(htmlresponse)
+              
+              var len = json.length;
+              console.log(json)
+              item = "<option value=''>Select Course</option>";
+              for (var i = 0; i < len; i++) {
+                item += "<option value=" + json[i]['groupid'] + ">" + json[i]['group'] + "</option>";
+
+              }
+              $(".groupid").html(item);
+            }
+          });
+        }
+      });
+
+
+      $(".groupid").on('change', function() {
+        var groupid = $(this).val();
+        console.log(groupid)
+        if (groupid) {
+          $.ajax({
+            type: 'POST',
+            url: 'APIS/get_classes.php',
+            data: {
+              groupid: groupid
+            },
+            success: function(htmlresponse) {
+              var json = $.parseJSON(htmlresponse)
+              
+              var len = json.length;
+              console.log(json)
+              item = "<option value=''>Select Class</option>";
+              for (var i = 0; i < len; i++) {
+                item += "<option value=" + json[i]['classid'] + ">" + json[i]['class'] + "</option>";
+
+              }
+              $(".classid").html(item);
+            }
+          });
+        }
+      });
+
+
+
+
 });
+
+
+
 </script>
 
 <div class="modal fade" id="modal-lg">
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
-              <h4 class="modal-title">Add New Department</h4>
+              <h4 class="modal-title">Add New Subject</h4>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
             <form action="" method="post">
             <div class="modal-body">
+                <?PHP
+                $q=mysqli_query($conn,"select * from courses");
+                 
+                ?>
               
-                <div class="row">
+              <div class="row">
                     <div class="col-6">
-                        <label>Department Code</label>
+                        <label>Courses</label>
                     </div>
                     <div class="col-6">
-                        <input type="text" name="deptcode" placeholder="Enter Department Code" required />
+                        <select name="course" placeholder="Select Course" class="form-control course" required />
+                        <option value="">Select Course </option>
+                        <?PHP
+                          while($r=mysqli_fetch_array($q))
+                          {
+                            echo "<option value='".$r['id']."'>".$r['course']."</option>";
+                          }
+                        ?>
+                        </select>
+                    </div>
+
+                </div>
+
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Select Group</label>
+                    </div>
+                    <div class="col-6">
+                    <select class="form-control groupid" id="exforgroup" name="group" required>
+                <option value="">Select Group </option>    
+                </select>
                     </div>
 
                 </div>
 
                 <div class="row">
                     <div class="col-6">
-                        <label>Department Name</label>
+                        <label>Select Class</label>
                     </div>
                     <div class="col-6">
-                        <input type="text" name="deptname" placeholder="Enter Department Name" required />
+                    <select class="form-control classid" id="exforgroup" name="class" required>
+                <option value="">Select Class </option>    
+                </select>
+                    </div>
+
+                </div>
+
+                
+                <div class="row">
+                    <div class="col-6">
+                        <label>Subject Short Code</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" name="subjcode" class="form-control" placeholder="Enter subject code" required />
+                    </div>
+
+                </div>
+
+
+                <div class="row">
+                    <div class="col-6">
+                        <label>Subject Title</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="text" name="subjtitle" class="form-control" placeholder="Enter subject title" required />
                     </div>
 
                 </div>

@@ -1,14 +1,18 @@
 <?PHP
 include_once("header.php");
-$depts=mysqli_query($conn,"select * from departments order by dept_code asc");
+$faculties=mysqli_query($conn,"select U.*,D.dept_name from users U left join departments D on U.deptid=D.id where U.user_role=1 order by D.dept_name,U.fname");
 
 if(isset($_POST['submit']))
 {
-    $dept_code=$_POST['deptcode'];
-    $dept_name=$_POST['deptname'];
-    if(mysqli_query($conn,"Insert into departments(dept_code,dept_name) values('$dept_code','$dept_name')"))
+    $deptid=$_POST['deptid'];
+    $fname=$_POST['fname'];
+    $password=md5("Faculty@vdc");
+    $mobileno=$_POST['mobileno'];
+    $userrole=1;
+    
+    if(mysqli_query($conn,"Insert into users(deptid,fname,password,mobileno,user_role) values($deptid,'$fname','$password','$mobileno',$userrole)"))
     {
-        echo '<script>alert("Record added Successfully")</script>';
+        echo '<script>alert("AdminAdded Successfully")</script>';
         header("Refresh:0");
     }
     else
@@ -71,7 +75,7 @@ include_once("menus.php");
       <div class="container-fluid">
         <div class="row mb-2">
           <div class="col-sm-6">
-            <p class="m-0">Departments   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            <p class="m-0">Administrators &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
             <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#modal-lg">
                   Add New
                 </button>
@@ -80,7 +84,7 @@ include_once("menus.php");
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
               <li class="breadcrumb-item"><a href="#">Home</a></li>
-              <li class="breadcrumb-item active">Departments</li>
+              <li class="breadcrumb-item active">Administrators</li>
             </ol>
           </div><!-- /.col -->
         </div><!-- /.row -->
@@ -93,33 +97,36 @@ include_once("menus.php");
       <div class="container-fluid">
         <div class="card card-primary">
             <div class="card-header">
-                <div class="card-title">Departments</div>
+                <div class="card-title">Administrators</div>
             </div>
             <div class="card-body">
                 <table class="table table-bordered table-havor" id="example2">
                    <thead>
                     <tr>
                         <th>SNO</th>
-                        <th>Department Code</th>
                         <th>Department</th>
+                        <th>Admin Name</th>
+                        <th>Mobile No</th>
                         
                     </tr>
                    </thead>
                    <tbody>
                     <?PHP 
                       $sno=1;
-                      while($r=mysqli_fetch_array($depts))
+                      while($r=mysqli_fetch_array($faculties))
                       {
-                        $deptcode=$r['dept_code'];
-                        $deptname=$r['dept_name'];
+                        $dept=$r['dept_name'];
+                        $faculty=$r['fname'];
+                        $mobile=$r['mobileno'];
                         echo "<tr>
                           <td>$sno
-                            &nbsp; &nbsp; <button class='btn btn-warning btnedit' data-deptid='".$r['id']."' data-toggle='modal' data-target='#modal-lg'>Edit </button>
+                            &nbsp; &nbsp; <button class='btn btn-warning btnedit' data-courseid='".$r['id']."' data-toggle='modal' data-target='#modal-lg'>Edit </button>
                             &nbsp; &nbsp;  <button class='btn btn-danger del' data-recid='".$r['id']."'>Delete </button>
                           </td>
                           
-                          <td>$deptcode</td>
-                          <td>$deptname</td>
+                          <td>$dept</td>
+                          <td>$faculty</td>
+                          <td>$mobile</td>
                         </tr>
                         ";
                         $sno++;
@@ -220,7 +227,7 @@ include_once("menus.php");
             url: 'APIS/delete_record.php',
             data: {
               recid: recid,
-              table:'departments',
+              table:'users',
               colname:'id'
             },
             success: function(htmlresponse) {
@@ -244,30 +251,54 @@ include_once("menus.php");
         <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-header">
-              <h4 class="modal-title">Add New Department</h4>
+              <h4 class="modal-title">Add New Faculty</h4>
               <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                 <span aria-hidden="true">&times;</span>
               </button>
             </div>
             <form action="" method="post">
             <div class="modal-body">
+                <?PHP
+                $q=mysqli_query($conn,"select * from departments order by dept_name");
+                 
+                ?>
               
-                <div class="row">
+              <div class="row">
                     <div class="col-6">
-                        <label>Department Code</label>
+                        <label>Deprtments</label>
                     </div>
                     <div class="col-6">
-                        <input type="text" name="deptcode" placeholder="Enter Department Code" required />
+                        <select name="deptid" placeholder="Select Deprtment" class="form-control" required />
+                        <option value="">Select Deprtment </option>
+                        <?PHP
+                          while($r=mysqli_fetch_array($q))
+                          {
+                            echo "<option value='".$r['id']."'>".$r['dept_name']."</option>";
+                          }
+                        ?>
+                        </select>
                     </div>
 
                 </div>
 
+
                 <div class="row">
                     <div class="col-6">
-                        <label>Department Name</label>
+                        <label>Faculty Name</label>
                     </div>
                     <div class="col-6">
-                        <input type="text" name="deptname" placeholder="Enter Department Name" required />
+                        <input type="text" name="fname" class="form-control" placeholder="Enter Faculty Name" required />
+                    </div>
+
+                </div>
+
+                
+                <div class="row">
+                    <div class="col-6">
+                        <label>Mobile Number</label>
+                    </div>
+                    <div class="col-6">
+                        <input type="number" name="mobileno" class="form-control" placeholder="Enter mobile number" title="Enter valid mobile number" pattern="[1-9]{1}[0-9]{9}" required />
                     </div>
 
                 </div>

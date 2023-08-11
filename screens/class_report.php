@@ -1,37 +1,50 @@
 <?PHP
 include_once("header.php");
-$fid=$_SESSION['facultyid'];
-$q="Select C.Course,G.group_name,CL.class_name,U.fname,D.dept_name,CI.id,CI.classid from class_incharge CI";
-$q.=" left join users U on CI.facultyid=U.id left join departments D on U.deptid=D.id";
-$q.=" left join classes CL on CI.classid=CL.id left join groups G on CL.group_id=G.id";
-$q.=" left join courses C on CL.course_id=C.id where CI.facultyid=$fid";
-$qres = mysqli_query($conn, $q);
-
-$result = array();
-while($r=mysqli_fetch_array($qres))
+$q1=mysqli_query($conn,"select * from classes");
+$count1=mysqli_num_rows($q1);
+$result=array();
+if($count1>0)
 {
-    
-    $tarr=array(
-        "classid"=>$r['classid'],
-        "class"=>$r['class_name'],
-        "dates"=>array()
-    );
-    $classid=$r['classid'];
-    $q2qry="select id,tdate from attendance where faculty=$fid and classid=$classid and sms_status=0 group by tdate";
-    
-    $q2=mysqli_query($conn,$q2qry);
-    $d=array();
-    while($r2=mysqli_fetch_array($q2))
+    $tarr=array();
+    while($r1=mysqli_fetch_array($q1))
     {
-        $tmp=array(
-            "day" => $r2['tdate'],
-            "rid"=>$r2['id']
-        );
-        array_push($d,$tmp);
+        $classid=$r1['id'];
+        $class=$r1['class_name'];
+        $tarr["classid"]=$classid;
+        $tarr["class"]=$class;
+        $tarr['subjects']=array();
+        $q2=mysqli_query($conn,"select * from subjects where classid=$classid");
+        $count2=mysqli_num_rows($q2);
+        if($count2>0)
+        {
+            $subjarr=array("subjects"=>array());
+            while($r2=mysqli_fetch_array($q2))
+            {
+                $subjectid=$r2['id'];
+                $subject=$r2['subj_title'];
+                $totalclasses=0;
+                $q3=mysqli_query($conn,"select * from attendance where classid=$classid and subject=$subjectid" );
+                $count3=mysqli_num_rows($q3);
+                if($count3>0)
+                {
+                    $r3=mysqli_fetch_array($q3);
+                    $totalclasses=$count3;
+   
+                }
+                $tarr1=array(
+                    "subject"=>$subject,
+                    "total"=>$totalclasses
+                );
+                array_push($subjarr['subjects'],$tarr1);
+
+            }
+            array_push($tarr['subjects'],$subjarr);
+        }
+        array_push($result,$tarr);
     }
-    array_push($tarr['dates'],$d);
-    array_push($result,$tarr);
+    
 }
+
 
 
 
@@ -88,26 +101,29 @@ while($r=mysqli_fetch_array($qres))
             <div class="content-header">
                 <div class="container-fluid">
                     <div class="row">
+                        <div class="col-lg-12">
                         <div class="card card-danger">
                             <div class="card-header">
-                                <div class="card-title">Send SMS</div>
+                                <div class="card-title">Class Report</div>
                             </div>
                             <div class="card-body">
                                
                                     <div class="row">
+                                        <div class="col-lg-12">
                                        <?PHP
                                          if(empty($result))
                                          {
-                                            echo "<h1 class='bg-indigo'>No Classes assigned to you</h1>";
+                                            echo "<h1 class='bg-indigo'>No classes to show</h1>";
                                          }
                                          else{
                                             ?>
-                                            <table class="table table-stripped"> 
+                                            <table class="table table-bordered table-havor" id="example2"> 
                                                 <thead>
                                                     <tr>
-                                                        <td>SNo </td>
-                                                        <td>Class</td>
-                                                        <td>Pending Days</td>
+                                                        <th>SNo </th>
+                                                        <th>Class</th>
+                                                        <th>Subjects</th>
+                                                        
                                                     </tr>
                                                 </thead>              
                                                 <tbody>  
@@ -118,25 +134,32 @@ while($r=mysqli_fetch_array($qres))
                                                 echo "<tr>
                                                          <td>$n</td>
                                                          <td> $class</td>";
+                                                         
                                                 ?>
                                                 <td>
                                                     <?php
-                                                      if(empty($value['dates'][0]))
+                                                      if(empty($value['subjects']))
                                                       {
-                                                        echo "No Pending SMS";
+                                                        echo "No Subjects Found";
                                                       }
                                                       else
                                                       {
                                                         //var_dump($value['dates'][0]);
-                                                        echo "<table><tr><td>SNO</td><td>Date</td><td>action</td></tr>";
+                                                        echo "<table border=2><tr><td>SNO</td><td>Subject</td><td>total Classes</td></tr>";
                                                         $s=1;
-                                                        foreach($value['dates'][0] as $d1)
+                                                        
+                                                        foreach($value['subjects'] as $r)
                                                         {
+                                                            
+                                                            foreach($r['subjects'] as $d1)
+                                                           {
                                                             echo "<tr><td>$s</td>";
-                                                            echo "<td>".$d1['day']."</td>";
-                                                            echo "<td><button class='btn btn-primary sendsms' data-rid=".$d1['day']." data-cid=".$value['classid'].">Send SMS</button></td>";
+                                                             
+                                                            echo "<td>".$d1['subject']."</td>";
+                                                            echo "<td>".$d1['total']."</td>";
                                                             echo "</tr>";
                                                             $s++;
+                                                           }
                                                         }
                                                         
                                                         echo "</table>";
@@ -147,17 +170,20 @@ while($r=mysqli_fetch_array($qres))
 
                                                 <?PHP
                                                          
-                                                                                                      
+                                               $n++;                                                       
                                             }
+                                            echo "</tbody>";
                                             
                                          }
                                        ?>
                                        
                                         </table>
+                                        </div>
                                     </div>
                                 
                             </div>
                         </div>
+                                        </div>
                     </div>
                 </div><!-- /.container-fluid -->
             </div>
@@ -242,105 +268,12 @@ while($r=mysqli_fetch_array($qres))
                 "autoWidth": false,
                 "responsive": true,
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
-            }).buttons().container().appendTo('.example2_wrapper .col-md-6:eq(0)');
+            }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
         });
 
 
-        $(".course").on('change', function() {
-            var course = $(this).val();
-
-            if (course) {
-                $.ajax({
-                    type: 'POST',
-                    url: 'APIS/get_groups.php',
-                    data: {
-                        course: '' + course + ''
-                    },
-                    success: function(htmlresponse) {
-                        var json = $.parseJSON(htmlresponse)
-                        $(".group-div").css("display", "block");
-                        var len = json.length;
-                        console.log(json)
-                        item = "<option value=''>Select Course</option>";
-                        for (var i = 0; i < len; i++) {
-                            item += "<option value=" + json[i]['groupid'] + ">" + json[i]['group'] + "</option>";
-
-                        }
-                        $(".groupid").html(item);
-                    }
-                });
-            }
-        });
-
-
-        $(".groupid").on('change', function() {
-            var groupid = $(this).val();
-            //alert("hi")
-            if (groupid) {
-                $.ajax({
-                    type: 'POST',
-                    url: 'APIS/get_classes.php',
-                    data: {
-                        groupid: groupid
-                    },
-                    success: function(htmlresponse) {
-                        var json = $.parseJSON(htmlresponse)
-                        
-                        var len = json.length;
-                        console.log(json)
-                        item = '<table class="table table-bordered table-havor extbl" id="example2">';
-                        
-                        item+='<thead>';
-                        item+="<tr>";
-                        item+="<th>SNO</th>";
-                        item+="<th>class</th>";
-                        item+="<th>Action</th>";
-                        item+="</tr>";
-                        item+="</thead>";
-                        item+="<tbody>";
-                        for (var i = 0; i < len; i++) {
-                            item+="<tr>";
-                            item+="<td>"+(i+1)+"</td>";
-                            item+="<td>"+json[i]['class']+"</td>";
-                            item+='<td><button class="btn btn-primary btn-submit2">Send SMS</button></td>';
-                            item+='</tr>';
-                            //item += "<option value=" + json[i]['classid'] + ">" + json[i]['class'] + "</option>";
-
-                        }
-                        item+="</tbody>";
-                        item+="</table>"
-                        $("#tbls").html(item);
-                    }
-                });
-            }
-        });
-
-
-        $(".sendsms").on('click', function() {
-            var tdate = $(this).data('rid');
-            var cid=$(this).data('cid');
-            //alert(cid);
-            //alert(rid);
-            if (tdate && cid) {
-                $.ajax({
-                    type: 'POST',
-                    url: 'APIS/send_sms.php',
-                    data: {
-                       tdate:tdate,
-                       cid:cid
-                    },
-                    success: function(htmlresponse) {
-                        var json = $.parseJSON(htmlresponse)
-                         
-                        alert(json[0]['msg']);
-                        location.reload();
-                    }
-                });
-            }
-        });
-
-   
-
+       
+       
 
         
     </script>
