@@ -217,7 +217,7 @@ if (isset($_POST['get_data']))
                                                     }
                                                 
                                             }
-                                            $percentage=($pcount/$totaldays)*100;
+                                            $percentage=round(($pcount/$totaldays)*100,2,PHP_ROUND_HALF_UP);
                                             echo "<td>$percentage %</td>";
                                             echo "</tr>";
                                         
@@ -311,7 +311,7 @@ if (isset($_POST['get_data']))
                 "searching": true,
                 "ordering": true,
                 "info": true,
-                "autoWidth": false,
+                "autoWidth": true,
                 "responsive": false,
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
