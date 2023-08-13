@@ -135,6 +135,8 @@ function check($conn1, $classid, $tdate, $hour)
       <!-- Main content -->
       <section class="content">
         <div class="container-fluid">
+          <div class="row">
+            <div class="col">
           <!-- Small boxes (Stat box) -->
           <div class="card card-primary">
             <div class="card-header">
@@ -201,7 +203,8 @@ function check($conn1, $classid, $tdate, $hour)
                 </div>
 
                 <div class="tbl-div">
-                  <h3> Students Data </h3>
+                  <Label style="color:blue;font-size:16px">Prasent: </label><label style="color:red;font-size:18px" id="pcounter">0</label>
+                  <Label style="color:blue;font-size:16px">Absent: </label><label style="color:red;font-size:18px" id="pcounter2">0</label>
                   <table class="studtbl" border="1" width="100%">
 
                     <tbody>
@@ -216,7 +219,8 @@ function check($conn1, $classid, $tdate, $hour)
 
             </form>
           </div>
-
+                  </div>
+                  </div>
           <!-- /.row (main row) -->
         </div><!-- /.container-fluid -->
       </section>
@@ -352,13 +356,14 @@ function check($conn1, $classid, $tdate, $hour)
 
               var len1 = subjs.length
               var len2 = studs.length
+              document.getElementById('pcounter2').innerHTML=len2;
               item = "<option value=''>Select Subject</option>";
               for (var i = 0; i < len1; i++) {
                 item += "<option value=" + subjs[i]['id'] + ">" + subjs[i]['subj'] + "[" + subjs[i]['subj_code'] + "]</option>";
 
               }
               $(".subjectid").html(item);
-
+              
               var tbl = "<tr>";
               tbl += "<th>SNO</th>";
               tbl += "<th>Student Name </th>";
@@ -374,8 +379,8 @@ function check($conn1, $classid, $tdate, $hour)
                 tbl += '<td>' + studs[j]['admnno'] + '</td>';
                 tbl += '<td>' + studs[j]['htno'] + '</td>';
                 tbl+='<td><div class="custom-control custom-switch">';
-                tbl+='<input type="checkbox" name="s'+studs[j]["id"]+'" class="custom-control-input" id="'+studs[j]["id"]+'">';
-                tbl+='<label class="custom-control-label" for="'+studs[j]["id"]+'">Toggle this switch element</label>';
+                tbl+='<input type="checkbox" name="s'+studs[j]["id"]+'" class="custom-control-input cbox" id="'+studs[j]["id"]+'" onclick="counter(this.id)">';
+                tbl+='<label class="custom-control-label" for="'+studs[j]["id"]+'">Present/Absent</label>';
                 tbl+='</div></td>';
                 //tbl += '<td> <input type="radio" name="' + studs[j]["id"] + '" value="0" checked style="margin:10px">Absent';
                 //tbl += '<input type="radio" name="' + studs[j]["id"] + '" value="1" style="margin:10px">Present</td>';
@@ -391,6 +396,34 @@ function check($conn1, $classid, $tdate, $hour)
 
 
     });
+
+
+
+    function counter(tid)
+    {
+//      document.getElementById(tid).addEventListener('change', (e) => {
+//          pcount=Number(document.getElementById('pcounter').innerHTML);
+//   this.checkboxValue = e.target.checked ? 'on' : 'off';
+//   console.log(this.checkboxValue);
+//   if(this.checkboxValue=="on")
+//   {
+//     pcount=pcount+1;
+//     console.log("increased"+pcount)
+//   }
+//  if(this.checkboxValue=="off"){
+//     pcount=pcount-1;
+//   }
+//   document.getElementById("pcounter").innerHTML=pcount;
+//   })
+
+        var pcount=Number(document.getElementById('pcounter').innerHTML);
+        var checkboxes = $('input:checkbox:checked').length;
+        var checkboxes2 = $('input:checkbox:not(":checked")').length;
+        document.getElementById("pcounter").innerHTML=checkboxes;
+        document.getElementById("pcounter2").innerHTML=checkboxes2;
+   
+
+} 
   </script>
 
 

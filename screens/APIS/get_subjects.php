@@ -23,7 +23,8 @@ while($r1=mysqli_fetch_array($studsql))
     "id"=>$r1['id'],
     "sname"=>$r1['sname'],
     "htno"=>$r1['htno'],
-    "admnno"=>$r1['admn_no']
+    "admnno"=>$r1['admn_no'],
+    "mobileno"=>$r1['mobileno']
    );
 
    array_push($studs,$temp);
