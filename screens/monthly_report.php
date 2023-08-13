@@ -1,44 +1,30 @@
 <?PHP
 include_once("header.php");
-$courses = mysqli_query($conn, "select * from courses");
-$result = array();
-$subj = "";
-$datesarr1 = array();
-$studsarr1 = array();
-if (isset($_POST['get_data'])) 
-{
-    $course = $_POST['course'];
-    $group = $_POST['group'];
-    $class = $_POST['class'];
-    $subject = $_POST['subject'];
-    $facultyid = $_SESSION['facultyid'];
-    $recid = array();
 
-    $datesq = mysqli_query($conn, "select * from attendance where classid=$class and subject=$subject");
-    while ($r = mysqli_fetch_array($datesq)) {
-        $tarr = array(
-            "tdate" => $r['tdate'],
-            "recid" => $r['recid'],
-            "hour" => $r['hour']
-        );
-        array_push($datesarr1, $tarr);
-    }
+$fid = $_SESSION['facultyid'];
+$fname = $_SESSION['user'];
 
+$gdeptq = mysqli_query($conn, "select U.deptid,D.dept_name from users U left join departments D on U.deptid=D.id where U.id=$fid ");
+$dr = mysqli_fetch_array($gdeptq);
+$department = $dr['dept_name'];
 
-    $studsq = mysqli_query($conn, "select * from students where classid=$class");
-    while ($r2 = mysqli_fetch_array($studsq)) {
-        $tarr = array(
-            "sname" => $r2['sname'],
-            "admnno" => $r2['admn_no'],
-            "id" => $r2['id']
-        );
-        array_push($studsarr1, $tarr);
-    }
-   
-}
+$q = "SELECT S.subj_title,C.class_name,count(A.tdate)as total from attendance A";
+$q .= " left join subjects S on A.subject=S.id left join classes C";
+$q .= " on A.classid=C.id where faculty=$fid and MONTH(tdate) = MONTH(now())";
+$q .= " and YEAR(tdate) = YEAR(now()) group by A.subject";
 
+$res = mysqli_query($conn, $q);
+
+$count = mysqli_num_rows($res);
 
 ?>
+<style type="text/css">
+    @media print {
+        td {
+            white-space: pre-wrap;
+        }
+    }
+</style>
 
 <body class="hold-transition sidebar-mini layout-fixed">
     <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
@@ -87,153 +73,85 @@ if (isset($_POST['get_data']))
 
         <!-- Content Wrapper. Contains page content -->
         <div class="content-wrapper" style='background:url("../Images/naac_logo2.jpg") no-repeat;background-position:center;opacity:0.9;z-index: -1'>
-            <!-- Content Header (Page header) -->
-            <div class="content-header">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="card card-danger">
-                            <div class="card-header">
-                                <div class="card-title">Select the following</div>
-                            </div>
-                            <div class="card-body">
-                                <form action="#" method="POST">
-                                    <div class="row">
-                                        <div class="form-group">
-                                            <label for="exforcourse">Select Course</label>
-                                            <select class="custom-select form-control-border course" id="exforcourse" name="course" required>
-                                                <option value="">Select Course</option>
-                                                <?PHP
-                                                $course_sql = mysqli_query($conn, "select * from courses");
-
-                                                while ($row = mysqli_fetch_array($course_sql)) {
-
-                                                    echo "<option value=" . $row['id'] . ">" . $row['course'] . "</option>";
-                                                }
-                                                
-                                                ?>
-
-                                            </select>
-                                        </div>
-                                        <div class="form-group">
-                                            <label for="exforgroup">Select Group</label>
-                                            <select class="custom-select form-control-border groupid" id="exforgroup" name="group" required>
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label for="exforclass">Select Class</label>
-                                            <select class="custom-select form-control-border classid" id="exforclass" name="class" required>
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group subject-div">
-                                            <label for="exforsubj">Select Subject</label>
-                                            <select class="custom-select form-control-border subjectid" id="exforsubj" name="subject" required>
-                                            </select>
-                                        </div>
-
-
-
-                                        <div class="form-group">
-                                            <label for="submitfrm">&nbsp;</label>
-                                            <input type="submit" value="Get Data" id="submitfrm" name="get_data" class="btn btn-primary form-control btn-submit" />
-                                        </div>
-
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- /.container-fluid -->
-            </div>
-            <!-- /.content-header -->
-
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
                     <div class="card card-primary">
                         <div class="card-header">
-                            <div class="card-title">Students attendance Register</div>
+                            <div class="card-title">Faculty Monthly Report</div>
                         </div>
                         <div class="card-body">
                             <?php
-                             
 
-                            if(empty($datesarr1)) {
-                                
-                                echo "Attendance not yet started for the subject";
-                            } 
-                            else 
-                            {
+                            if ($count <= 0) {
+
+                                echo "You dont have class work ...";
+                            } else {
                                 
                             ?>
-                                <table class="table table-stripped table-havor" id="example2">
+                                <button class="btn btn-primary" onclick="printData()">Print</button>
+                                <table border=1 cellspacing=0 cellpadding=0 class="table table-bordered" id="example2">
                                     <thead>
                                         <tr>
-                                            <td>SNO</td>
-                                            <td>Student Name</td>
-                                            <td>Admn No</td>
-                                            <?PHP
-                                            foreach ($datesarr1 as $dt) {
-                                                $time_input = strtotime($dt['tdate']);
-                                                $date_input = getDate($time_input);
+                                            <th colspan=2>Faculty Name: </th>
+                                            <th colspan=2><?PHP echo $fname; ?></th>
+                                            
+                                            <th>Department: </th>
+                                            <th colspan=4><?PHP echo $department; ?></th>
+                                            
+                                           
+                                            <th>Month: </th>
+                                            
+                                            <th><?PHP echo date('F, Y'); ?></th>
 
-                                                    $d2 = $date_input['mday'] . "/" . $date_input['mon'] . "(".$dt['hour'].")";
-                                                    echo "<td>$d2</td>";
-                                                
-                                            }
-                                            ?>
-                                            <td>Percentage</td>
+
                                         </tr>
+
                                     </thead>
                                     <tbody>
+                                        <tr>
+                                            <td>SNO</td>
+                                            <td>Class</td>
+                                            <td>Subject</td>
+                                            <td>No of classes</td>
+                                            <td>Leaves availed this month</td>
+                                            <td>Total leaves availed</td>
+                                            <td>Faculty signature</td>
+                                            <td>Sign of HOD</td>
+                                            <td>Sign of Principal</td>
+                                            <td>Sign of AO</td>
+                                            <td>Sign of Secretary</td>
+
+
+                                        </tr>
                                         <?PHP
                                         $n = 1;
-                                        foreach ($studsarr1 as $s) {
-                                            $admnno=$s['admnno'];
-                                            $admnno2=substr(trim($admnno),-4);
+                                        while ($row = mysqli_fetch_array($res)) {
                                             echo "<tr>";
                                             echo "<td>$n</td>";
-                                            echo  "<td>" . $s['sname'] . "</td>";
-                                            echo "<td>" . $admnno2 . "</td>";
-                                            $sid = $s['id'];
-                                            $totaldays=count($datesarr1);
-                                            $pcount=0;
-                                            foreach ($datesarr1 as $d) 
+                                            echo "<td>" . $row['class_name'] . "</td>";
+                                            echo "<td>" . $row['subj_title'] . "</td>";
+                                            echo "<td>" . $row['total'] . "</td>";
+                                            if($n==1)
                                             {
-                                                    $recid = $d['recid'];
-                                                    $q="select status from attendance_detail where recid='$recid' and studentid=$sid";
-                                                   
-                                                    $statusqry = mysqli_query($conn, $q);
-                                                    
-                                                    $count1 = mysqli_num_rows($statusqry);
-                                                    if ($count1 > 0) {
-                                                        $r = mysqli_fetch_array($statusqry);
-                                                        $status = $r['status'];
-                                                        if($status==1)
-                                                          $pcount++;
-                                                        $flag=($status==1?"<font color='blue'>P</font>":"<font color='red'>A</font>");
-                                                        echo "<td>" . $flag. "</td>";
-                                                    } else {
-                                                        echo "<td><font color='red'>A</font></td>";
-                                                    }
-                                                
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
+                                            echo "<td rowspan=$count>&nbsp;</td>";
                                             }
-                                            $percentage=round(($pcount/$totaldays)*100,2,PHP_ROUND_HALF_UP);
-                                            echo "<td>$percentage %</td>";
+                                            
                                             echo "</tr>";
-                                        
                                             $n++;
-                                                                 
-                                               
                                         }
-                                       
-                                        
                                         ?>
+
                                     </tbody>
                                 </table>
                             <?PHP
-                            
+
                             }
                             ?>
 
@@ -306,6 +224,20 @@ if (isset($_POST['get_data']))
 
 
     <script>
+
+function printData()
+{
+   var divToPrint=document.getElementById("example2");
+   newWin= window.open("");
+   newWin.document.write(divToPrint.outerHTML);
+   newWin.print();
+   newWin.close();
+}
+
+        $(document).ready(function() {
+            document.title = "Vaagdevi Degree & P.G College | Hanamkonda | Daily Report of Staff";
+        });
+
         $(function() {
             $('#example2').DataTable({
                 "paging": true,
@@ -318,6 +250,7 @@ if (isset($_POST['get_data']))
                 "buttons": ["copy", "csv", "excel", "pdf", "print", "colvis"]
             }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
         });
+
 
 
         $(".course").on('change', function() {

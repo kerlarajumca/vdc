@@ -33,10 +33,10 @@ if (isset($_POST['upload_data'])) {
             
             foreach ($worksheet_arr as $row) {
                 //var_dump($worksheet_arr);
-                $sname = $row[1];
-                $admn_no = $row[2];
-                $htno = $row[3];
-                $mobileno = $row[4];
+                $sname = trim($row[1]);
+                $admn_no = trim($row[2]);
+                $htno = trim($row[3]);
+                $mobileno = substr(trim($row[4]),-10);
 
                 if ($validate = checkstudent($admn_no)) {
                     $upsql = "update students set sname='$sname',htno='$htno',mobileno='$mobileno' where admn_no=$admn_no";

@@ -1,45 +1,43 @@
 <?PHP
 include_once("header.php");
-$courses = mysqli_query($conn, "select * from courses");
+
 $result = array();
 $subj = "";
 $datesarr1 = array();
 $studsarr1 = array();
+$fid=$_SESSION['facultyid'];
+$fname=$_SESSION['user'];
+$tdate="";
+
+$gdeptq=mysqli_query($conn,"select U.deptid,D.dept_name from users U left join departments D on U.deptid=D.id where U.id=$fid ");
+$dr=mysqli_fetch_array($gdeptq);
+$department=$dr['dept_name'];
 if (isset($_POST['get_data'])) 
 {
-    $course = $_POST['course'];
-    $group = $_POST['group'];
-    $class = $_POST['class'];
-    $subject = $_POST['subject'];
+    $tdate=$_POST['tdate'];
     $facultyid = $_SESSION['facultyid'];
     $recid = array();
 
-    $datesq = mysqli_query($conn, "select * from attendance where classid=$class and subject=$subject");
+    $datesq = mysqli_query($conn, "select A.*,C.class_name,S.subj_code from attendance A left join classes C on A.classid=C.id left join subjects S on A.subject=S.id where A.tdate='$tdate' and A.faculty=$facultyid order by A.hour asc");
     while ($r = mysqli_fetch_array($datesq)) {
-        $tarr = array(
-            "tdate" => $r['tdate'],
-            "recid" => $r['recid'],
-            "hour" => $r['hour']
-        );
-        array_push($datesarr1, $tarr);
-    }
-
-
-    $studsq = mysqli_query($conn, "select * from students where classid=$class");
-    while ($r2 = mysqli_fetch_array($studsq)) {
-        $tarr = array(
-            "sname" => $r2['sname'],
-            "admnno" => $r2['admn_no'],
-            "id" => $r2['id']
-        );
-        array_push($studsarr1, $tarr);
-    }
-   
+    $tarr = array(
+        "recid" => $r['recid'],
+        "hour" => $r['hour'],
+        "topic"=>$r['topic'],
+        "class"=>$r['class_name'],
+        "subj_code"=>$r['subj_code']
+    );
+    array_push($datesarr1, $tarr);
+    } 
 }
-
-
 ?>
-
+<style type="text/css">
+    @media print {
+    td {
+        white-space: pre-wrap;
+    }
+}
+</style>
 <body class="hold-transition sidebar-mini layout-fixed">
     <link rel="stylesheet" href="../plugins/datatables-bs4/css/dataTables.bootstrap4.min.css">
     <link rel="stylesheet" href="../plugins/datatables-responsive/css/responsive.bootstrap4.min.css">
@@ -99,41 +97,24 @@ if (isset($_POST['get_data']))
                                 <form action="#" method="POST">
                                     <div class="row">
                                         <div class="form-group">
-                                            <label for="exforcourse">Select Course</label>
-                                            <select class="custom-select form-control-border course" id="exforcourse" name="course" required>
-                                                <option value="">Select Course</option>
+                                            <label for="exforcourse">Select Date</label>
+                                            <select class="form-control course" id="exforcourse" name="tdate" required>
+                                                <option value="">Select Date</option>
                                                 <?PHP
-                                                $course_sql = mysqli_query($conn, "select * from courses");
-
-                                                while ($row = mysqli_fetch_array($course_sql)) {
-
-                                                    echo "<option value=" . $row['id'] . ">" . $row['course'] . "</option>";
-                                                }
+                                                    $dates_sql ="select tdate from attendance where faculty=$fid";
+                                                    $dates_sql.=" and MONTH(tdate) = MONTH(now()) and YEAR(tdate) = YEAR(now()) group by tdate order by tdate desc";
+                                                                    
+                                                    $dexec=mysqli_query($conn,$dates_sql);
+                                                    while ($row = mysqli_fetch_array($dexec)) {
+                    
+                                                                        echo "<option value=" . $row['tdate'] . ">" . $row['tdate'] . "</option>";
+                                                                    }
                                                 
                                                 ?>
 
                                             </select>
                                         </div>
-                                        <div class="form-group">
-                                            <label for="exforgroup">Select Group</label>
-                                            <select class="custom-select form-control-border groupid" id="exforgroup" name="group" required>
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group">
-                                            <label for="exforclass">Select Class</label>
-                                            <select class="custom-select form-control-border classid" id="exforclass" name="class" required>
-                                            </select>
-                                        </div>
-
-                                        <div class="form-group subject-div">
-                                            <label for="exforsubj">Select Subject</label>
-                                            <select class="custom-select form-control-border subjectid" id="exforsubj" name="subject" required>
-                                            </select>
-                                        </div>
-
-
-
+                                        
                                         <div class="form-group">
                                             <label for="submitfrm">&nbsp;</label>
                                             <input type="submit" value="Get Data" id="submitfrm" name="get_data" class="btn btn-primary form-control btn-submit" />
@@ -153,7 +134,7 @@ if (isset($_POST['get_data']))
                 <div class="container-fluid">
                     <div class="card card-primary">
                         <div class="card-header">
-                            <div class="card-title">Students attendance Register</div>
+                            <div class="card-title">Faculty Daily Report</div>
                         </div>
                         <div class="card-body">
                             <?php
@@ -161,68 +142,83 @@ if (isset($_POST['get_data']))
 
                             if(empty($datesarr1)) {
                                 
-                                echo "Attendance not yet started for the subject";
+                                echo "You dont have";
                             } 
                             else 
                             {
                                 
                             ?>
-                                <table class="table table-stripped table-havor" id="example2">
+                                <table class="table table-stripped" id="example2">
                                     <thead>
                                         <tr>
-                                            <td>SNO</td>
-                                            <td>Student Name</td>
-                                            <td>Admn No</td>
-                                            <?PHP
-                                            foreach ($datesarr1 as $dt) {
-                                                $time_input = strtotime($dt['tdate']);
-                                                $date_input = getDate($time_input);
-
-                                                    $d2 = $date_input['mday'] . "/" . $date_input['mon'] . "(".$dt['hour'].")";
-                                                    echo "<td>$d2</td>";
-                                                
-                                            }
-                                            ?>
-                                            <td>Percentage</td>
+                                            <th>Faculty Name: </th>
+                                            <th><?PHP echo $fname;?></th>
+                                            <th>&nbsp;</th>
+                                            <th>Department:  </th>
+                                            <th><?PHP echo $department; ?></th>
+                                            <th> &nbsp;</th>
+                                           
+                                            <th>Date: <?PHP echo $tdate; ?></th>
+                                        
+                                            
                                         </tr>
+                                       
                                     </thead>
                                     <tbody>
+                                    <tr>
+                                            <td>SNO</td>
+                                            <td>Hour</td>
+                                            <td>Class</td>
+                                            <td>Subject</td>
+                                            <td>Topic</td>
+                                            <td>Present/Absent</td>
+                                            
+                                            <td>Absents</td>
+                                        </tr>
                                         <?PHP
                                         $n = 1;
-                                        foreach ($studsarr1 as $s) {
-                                            $admnno=$s['admnno'];
-                                            $admnno2=substr(trim($admnno),-4);
-                                            echo "<tr>";
-                                            echo "<td>$n</td>";
-                                            echo  "<td>" . $s['sname'] . "</td>";
-                                            echo "<td>" . $admnno2 . "</td>";
-                                            $sid = $s['id'];
-                                            $totaldays=count($datesarr1);
-                                            $pcount=0;
-                                            foreach ($datesarr1 as $d) 
+                                        foreach ($datesarr1 as $d) {
+                                            $recid=$d['recid'];
+                                            $q2=mysqli_query($conn,"select * from attendance_detail where recid=$recid and status=1 order by studentid asc");
+                                            $pcount=mysqli_num_rows($q2);
+
+                                            $q3=mysqli_query($conn,"select AD.*,S.admn_no from attendance_detail AD left join students S on AD.studentid=S.id where recid=$recid and status=0 order by studentid asc");
+                                            $absentees="";
+                                            $abcount=mysqli_num_rows($q3);
+                                            if($abcount>0)
                                             {
-                                                    $recid = $d['recid'];
-                                                    $q="select status from attendance_detail where recid='$recid' and studentid=$sid";
-                                                   
-                                                    $statusqry = mysqli_query($conn, $q);
-                                                    
-                                                    $count1 = mysqli_num_rows($statusqry);
-                                                    if ($count1 > 0) {
-                                                        $r = mysqli_fetch_array($statusqry);
-                                                        $status = $r['status'];
-                                                        if($status==1)
-                                                          $pcount++;
-                                                        $flag=($status==1?"<font color='blue'>P</font>":"<font color='red'>A</font>");
-                                                        echo "<td>" . $flag. "</td>";
-                                                    } else {
-                                                        echo "<td><font color='red'>A</font></td>";
+                                                while($r2=mysqli_fetch_array($q3))
+                                                {
+                                                    if($absentees=="")
+                                                    {
+                                                        $absentees=$r2['admn_no'];
                                                     }
-                                                
+                                                    else
+                                                    {
+                                                        $absentees.=",".substr(trim($r2['admn_no']),-3);
+                                                    }
+                                                }
                                             }
-                                            $percentage=round(($pcount/$totaldays)*100,2,PHP_ROUND_HALF_UP);
-                                            echo "<td>$percentage %</td>";
-                                            echo "</tr>";
-                                        
+                                            else{
+                                                $absentees="No Absentees....";
+                                            }  
+                                            $absentees.=",564,342,231,456,896,564,234,876,762,098,234,342";
+                                            $absentees.=",564,342,231,456,896,564,234,876,762,098,234,342";
+                                            $absentees.=",564,342,231,456,896,564,234,876,762,098,234,342";
+                                            $absentees.=",564,342,231,456,896,564,234,876,762,098,234,342";
+                                            ?>
+                                            <tr>
+                                                <td width=10px><?PHP echo $n; ?></td>
+                                                <td><?PHP echo $d['hour']?></td>
+                                                <td><?PHP echo $d['class']?></td>
+                                                <td><?PHP echo $d['subj_code'] ?></td>
+                                                <td><?PHP echo wordwrap($d['topic'],25,"<br>\n",true) ?></td>
+                                                <td><?PHP echo $pcount."/".$abcount ?></td>
+                                                <td><?PHP echo wordwrap($absentees,30,"<br>\n",true) ?></td>
+                                            </tr>
+                                            <?PHP
+
+                                           
                                             $n++;
                                                                  
                                                
@@ -230,6 +226,15 @@ if (isset($_POST['get_data']))
                                        
                                         
                                         ?>
+                                         <tr height="50px">
+                                            <td>Faculty Sign:</td>
+                                            <td>&nbsp;</td>
+                                            <td>&nbsp;</td>
+                                            <td>Head Of Dept Sign:</td>
+                                            <td>&nbsp;</td>
+                                            <td>&nbsp;</td>
+                                            <td>Principal</td>
+                                        </tr>
                                     </tbody>
                                 </table>
                             <?PHP
@@ -306,6 +311,10 @@ if (isset($_POST['get_data']))
 
 
     <script>
+         $(document).ready(function() {
+        document.title = "Vaagdevi Degree & P.G College | Hanamkonda | Daily Report of Staff";
+    });
+
         $(function() {
             $('#example2').DataTable({
                 "paging": true,
@@ -319,6 +328,7 @@ if (isset($_POST['get_data']))
             }).buttons().container().appendTo('#example2_wrapper .col-md-6:eq(0)');
         });
 
+        
 
         $(".course").on('change', function() {
             var course = $(this).val();

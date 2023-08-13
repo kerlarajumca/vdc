@@ -1,0 +1,4 @@
+---
+deployment:
+  tasks:
+    - export DEPLOYPATH=/home/vaagdevi/public_html/cms.vaagdevimca.com
