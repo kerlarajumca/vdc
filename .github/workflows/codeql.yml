@@ -3,7 +3,7 @@ name: "CodeQL"
 on:
   push:
     branches:
-      - main
+      - master
       - v4-dev
       - "!dependabot/**"
   pull_request:
